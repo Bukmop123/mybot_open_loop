@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+
+  <group ns="human_input">
+     <!-- joy node -->
+  	<node respawn="true" pkg="joy"
+       	 		type="joy_node" name="NGS_joystick" >
+    		<param name="dev" type="string" value="/dev/input/js1" />
+    		<param name="deadzone" value="0.12" />
+  	</node>
+  </group>
+
+
+  <!--group ns="process_input"-->
+    <node pkg="operator_input" name="operator_cmds_node" type="operator_cmds_node"/>
+  <!--/group-->
+
+
+    <node pkg="mybot_basic_mov_control" name="basicMovementControl" type="mybot_basic_mov_control"/>
+
+
+
+
+  <node pkg="rosserial_python" type="serial_node.py" name="hardwareArduino">
+    <param name="port" value="/dev/ttyACM0"/>
+    <param name="baud" value="57600"/>
+  </node>
+
+
+
+</launch>

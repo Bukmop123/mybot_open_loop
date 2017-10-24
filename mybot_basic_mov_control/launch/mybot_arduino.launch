@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+
+  <group ns="human_input">
+     <!-- joy node -->
+  	<node respawn="true" pkg="joy"
+       	 		type="joy_node" name="NGS_joystick" >
+    		<param name="dev" type="string" value="/dev/input/js0" />
+    		<param name="deadzone" value="0.12" />
+  	</node>
+  </group>
+
+
+  <!--group ns="process_input"-->
+    <node pkg="operator_input" name="operator_cmds_node" type="operator_cmds_node"/>
+  <!--/group-->
+
+
+    <node pkg="mybot_basic_mov_control" name="basicMovementControl" type="mybot_basic_mov_control"/>
+
+
+
+
+  <node pkg="rosserial_python" type="serial_node.py" name="hardwareArduino">
+<param name="port" value="/dev/ttyACM0"/>
+    <!--param name="port" value="/dev/ttyUSB0"/-->
+    <param name="baud" value="57600"/>
+    <!--param name="baud" value="9600"/-->
+    <!--param name="baud" value="115200"/-->
+  </node>
+<!--node pkg="rosserial_python" type="serial_node.py" name="hardwareArduino">
+    <param name="port" value="/dev/ttyACM0"/>
+    <param name="baud" value="9600"/>
+  </node-->
+
+
+  <!-- GDB functionality -->
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+
+  <!-- Load example URDF -->
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find mybot_description)/urdf/mybot.xacro'"/>
+
+  <group ns="mybot">
+
+    <!-- Load hardware interface -->
+    <node name="rrbot_hardware_interface" pkg="ros_control_boilerplate" type="sim_hw_main"
+          output="screen" launch-prefix="$(arg launch_prefix)"/>
+
+    <!-- Load controller settings -->
+    <rosparam file="$(find ros_control_boilerplate)/rrbot_control/config/rrbot_controllers.yaml" command="load"/>
+
+    <rosparam file="$(find ros_control_boilerplate)/rrbot_control/config/cpmbot_diffdrive_controller.yaml" command="load"/>
+
+    <!-- Load controller manager -->
+    <node name="ros_control_controller_manager" pkg="controller_manager" type="controller_manager" respawn="false"
+	  output="screen" args="spawn joint_state_controller 
+base_link_diffc
+leg_left_front_pc
+leg_left_back_pc
+mw_left_front_vc
+mw_left_back_vc
+mw_right_front_vc
+mw_right_back_vc" />
+
+    <!-- Convert joint states to /tf tranforms -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  </group>
+
+
+</launch>

@@ -1,0 +1,23 @@
+Header header #Header for message type
+joint states
+
+base link: 
+	-position
+	-velocity
+	-acceleration
+	-rotation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
