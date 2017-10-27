@@ -1,0 +1,81 @@
+
+
+Step 1: Preparation
+1: connect the 
+	motors, 
+	circuit, 
+	arduino, 
+	raspberry together and turn the power on
+
+2: start the computer and connect to the internet
+
+
+Step 2: ssh connection to raspberry
+1: insert the LAN cable in the raspberry
+2: wait until the orange and green light are visible
+
+3: open a terminal and type:
+	cd ~/mybot_ws
+
+4: start the script: (with passwort for raspberry: raspberry)
+	./ssh-cpmbot-control.sh
+	
+you are connected to the raspberry through a terminal.
+
+Step 3: start ros in raspberry
+1:  type:
+	cd ~/mybot_ws
+
+2: start ros with: (with passwort for raspberry: raspberry)
+	./run_open_loop_arduino.sh 
+
+
+
+
+Step 4: read arduino feedback
+1: repeat Step 2.3, 2.4 
+2: type: 
+	rostopic echo /mybot/detail/feedbackHardwareInterface
+
+you know should be able to see the feedback from the arduino which looks like:
+
+---
+header: 
+  seq: 809
+  stamp: 
+    secs: 1509015957
+    nsecs: 646138072
+  frame_id: feedback robot detail
+left_wheel: 0.0
+right_wheel: 0.0
+base_to_left_front_leg: 0.0
+base_to_left_back_leg: 0.0
+base_to_right_front_leg: 0.0
+base_to_right_back_leg: 0.0
+wheel_to_left_front_leg: 0.0
+wheel_to_left_back_leg: 0.0
+wheel_to_right_front_leg: 0.0
+wheel_to_right_back_leg: 0.0
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
