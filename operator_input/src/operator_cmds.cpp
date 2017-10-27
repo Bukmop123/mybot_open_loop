@@ -8,101 +8,126 @@
 
 	#include "mybot_msg/msgMybot_basicMovement.h"
 
+double rosTimeToDouble(ros::Time RosTime) //ToDo implement in a library
+{ 
+  double a;
+  double b;
+  double c;
+  a=RosTime.sec;
+  b=RosTime.nsec;
+  c=1.0*a + 1.0*b*10.0e-10;
+  return c;
+} 
+
+
    class OperatorCommands
    {
-   private:
+   public:
 
-	//std_msgs::String str_tmp_[] ={"front", "back", "right", "left", "stop"};
+	OperatorCommands(ros::NodeHandle n ) 
+	{
 
-	std_msgs::String str_;
-	geometry_msgs::Twist robot_move_order_;
-	std_msgs::String str_mot1_;
-	std_msgs::String str_mot2_;
+		inv_front_leg_ = -1;
+		leg_left_front_up_vel_cmd_ = 0.0;
+		leg_left_front_down_vel_cmd_ = 0.0;
+		leg_left_back_up_vel_cmd_ = 0.0;
+		leg_left_back_down_vel_cmd_ = 0.0;
 
-	ros::Publisher pub_str_;
-	ros::Publisher pub_twist_;
-	ros::Publisher pub_mot1_;
-	ros::Publisher pub_mot2_;
-	ros::Publisher pub_trustCmd_;
+
+		JoystickSubscriber_ =  n.subscribe("/joy",10, &OperatorCommands::TrustJoyCallback ,this);
+		BasicCmdPublisher_ = n.advertise<mybot_msg::msgMybot_basicMovement>("mybot/robot/cmdBasicMovement", 10);
+
+	}
+
+	
+   
+    void pub_function() 
+    {
+	
+	ROS_INFO("in sub function");
+
+
+
+	cmdBasicMovement_.mecanum_movement_mode = mecanum_movement_mode_;
+
+	cmdBasicMovement_.robot_x = robot_x_;
+    cmdBasicMovement_.robot_y = robot_y_;
+    cmdBasicMovement_.robot_zrot = robot_zrot_;
+    cmdBasicMovement_.left_front_leg = left_front_leg_; 	
+    cmdBasicMovement_.left_back_leg = left_back_leg_;		
+    cmdBasicMovement_.right_front_leg = right_front_leg_; 	
+    cmdBasicMovement_.right_back_leg = right_back_leg_;		
+
+    BasicCmdPublisher_.publish(cmdBasicMovement_);
+    }
+
+    void fakeLegVelocity ( ) 
+		{ 
+
+		double angle_vel = 1;
+
+		if (true){
+
+
+			fakeLegPosition( -1*leg_left_front_up_vel_cmd_, leg_left_back_up_vel_cmd_, angle_vel );
+			fakeLegPosition( leg_left_front_down_vel_cmd_, -1*leg_left_back_down_vel_cmd_, angle_vel );
+		}
+	}
+
+
+private:
+
+	ros::Publisher BasicCmdPublisher_;
+	ros::Subscriber JoystickSubscriber_;
+
+	mybot_msg::msgMybot_basicMovement cmdBasicMovement_;
+
+	bool mecanum_movement_mode_;
+
+	double robot_x_;
+	double robot_y_;
+	double robot_zrot_;
+	double left_front_leg_cmd_;
+	double left_back_leg_cmd_;
+	double right_front_leg_cmd_;
+	double right_back_leg_cmd_;
+
+	double leg_left_front_up_vel_cmd_;
+	double leg_left_front_down_vel_cmd_;
+	double leg_left_back_up_vel_cmd_;
+	double leg_left_back_down_vel_cmd_;
 
 	double left_front_leg_;
 	double left_back_leg_;
+	double right_front_leg_;
+	double right_back_leg_;
+
+	double inv_front_leg_;
+
+	void fakeLegPosition( double cmd_left_front_leg, double cmd_left_back_leg, double angle_vel ) 
+	{ 
+
+		      if((cmd_left_front_leg == 1) || (cmd_left_front_leg == -1)){
+
+		        left_front_leg_ = left_front_leg_ + angle_vel*3.14/360 * cmd_left_front_leg;
+
+		      }
+		      if((cmd_left_back_leg == 1) || (cmd_left_back_leg == -1)){
+
+		        left_back_leg_ = left_back_leg_ + angle_vel*3.14/360 * cmd_left_back_leg;
+
+		      }
+	}
 
 
-	void fakeLegPosition( double cmd_left_front_leg_, double cmd_left_back_leg_ ) 
+	void fakeLegPosition5( double cmd_left_front_leg, double cmd_left_back_leg ) 
 	{ 
 			double angle_vel = 5;
 
-		      if((cmd_left_front_leg_ == 1) || (cmd_left_front_leg_ == -1)){
-
-		        left_front_leg_ = left_front_leg_ + angle_vel*3.14/360 * cmd_left_front_leg_;
-
-		      }
-		      if((cmd_left_back_leg_ == 1) || (cmd_left_back_leg_ == -1)){
-
-		        left_back_leg_ = left_back_leg_ + angle_vel*3.14/360 * cmd_left_back_leg_;
-
-		      }
+			fakeLegPosition( cmd_left_front_leg, cmd_left_back_leg, angle_vel );
 	}
 
-	
-
-   public:
-	OperatorCommands(const ros::Publisher pub_str, const ros::Publisher pub_twist, const ros::Publisher pub_mot1, const ros::Publisher pub_mot2, const ros::Publisher pub_trustCmd ) 
-	{
-
-	pub_str_ = pub_str;
-	pub_twist_ = pub_twist;	
-	pub_mot1_ = pub_mot1;
-	pub_mot2_ = pub_mot2;
-	pub_trustCmd_ = pub_trustCmd;
-
-	left_front_leg_ = 0;
-	left_back_leg_ = 0;
-
-	}
-	OperatorCommands(const ros::Publisher pub_twist, const ros::Publisher pub_trustCmd ) 
-	{
-		pub_twist_ = pub_twist;	
-		pub_trustCmd_ = pub_trustCmd;
-	}
-
-	
-    void MiguelJoyCallback(const sensor_msgs::Joy::ConstPtr& msg) 
-    { 
-	double axes[] = {msg->axes[0],msg->axes[1]};
-	int buttons[] = {msg->buttons[0],
-			msg->buttons[1],
-			msg->buttons[2],
-			msg->buttons[3],
-			msg->buttons[4],
-			msg->buttons[5],
-			msg->buttons[6],
-			msg->buttons[7],
-			msg->buttons[8],
-			msg->buttons[9]};
-			
-	
- 	ROS_INFO("X: %f,Y: %f, ", axes[0],axes[1]);
-  	ROS_INFO("B0: %d,B1: %d,B2: %d,B3: %d,B4: %d,B5: %d,B6: %d,B7: %d,B8: %d,B9: %d ",buttons[0],buttons[1],buttons[2],buttons[3],buttons[4],buttons[5],buttons[6],buttons[7],buttons[8],buttons[9]);
- 
-//	str_.data = "pub in jCB";
-
-
-	robot_move_order_.linear.x =axes[1] * 0.4;
-	robot_move_order_.angular.z =axes[0] * 0.2;
-
-
-	//publish
-	//pub_str_.publish(str_);
-	pub_twist_.publish(robot_move_order_);
-	//pub_mot1_.publish(str_mot1_);	
-	//pub_mot2_.publish(str_mot2_);
-	
-    }
-
-
-    void TrustJoyCallback(const sensor_msgs::Joy::ConstPtr& msg) 
+	void TrustJoyCallback(const sensor_msgs::Joy::ConstPtr& msg) 
     { 
     	double axes[] = {msg->axes[0],
     		msg->axes[1],
@@ -129,49 +154,58 @@
 			msg->buttons[13],
 			msg->buttons[14]};
 
-	mybot_msg::msgMybot_basicMovement cmdBasicMovement;
 
+    robot_x_ = axes[1];
+    robot_y_ = -axes[0];
+    robot_zrot_ = axes[2];
 
+    if(false){
 
+    	left_front_leg_cmd_ = -axes[5]; 	//miguel
+    	left_back_leg_cmd_ = axes[4];		//miguel
+    	right_front_leg_cmd_ = -axes[5]; 	//miguel
+    	right_back_leg_cmd_ = axes[4];		//miguel
 
+    	leg_left_front_up_vel_cmd_ = buttons[5];
+    	leg_left_front_down_vel_cmd_ = buttons[7];
+    	leg_left_back_up_vel_cmd_ = buttons[4];
+    	leg_left_back_down_vel_cmd_ = buttons[6];
 
-    cmdBasicMovement.robot_x = axes[1];
-    cmdBasicMovement.robot_y = -axes[0];
-    cmdBasicMovement.robot_zrot = axes[2];
-    //cmdBasicMovement.front_leg = -axes[5]; 	//miguel
-    //cmdBasicMovement.back_leg = axes[4];		//miguel
-    cmdBasicMovement.left_front_leg = axes[7];		//viktor
-    cmdBasicMovement.left_back_leg = axes[6];		//viktor
-    cmdBasicMovement.right_front_leg = axes[7];		//viktor
-    cmdBasicMovement.right_back_leg = axes[6];		//viktor
+    }else{
+    	left_front_leg_cmd_ = inv_front_leg_*axes[7];		//viktor
+    	left_back_leg_cmd_ = axes[6];		//viktor
+    	right_front_leg_cmd_ = inv_front_leg_*axes[7];		//viktor
+    	right_back_leg_cmd_ = axes[6];		//viktor
+
+    	leg_left_front_up_vel_cmd_ = buttons[7];
+    	leg_left_front_down_vel_cmd_ = buttons[9];
+    	leg_left_back_up_vel_cmd_ = buttons[6];
+    	leg_left_back_down_vel_cmd_ = buttons[8];
+
+    }
+    
+
+    
 
 
     
-    cmdBasicMovement.mecanum_movement_mode = buttons[0];
+    mecanum_movement_mode_ = buttons[0];
 
-    //if (buttons[1] == false){
-    if (false){
+    if (buttons[1] == false){
+    //if (false){
 
-    	fakeLegPosition( -axes[7], axes[6] );
-    	cmdBasicMovement.left_front_leg = left_front_leg_;		//viktor
-    	cmdBasicMovement.left_back_leg = left_back_leg_;
+    	fakeLegPosition5( left_front_leg_cmd_, left_back_leg_cmd_ );					//miguel
+
 
     }else{
     	left_front_leg_ = 0;
     	left_back_leg_ = 0;
+    	right_front_leg_ = 0;
+		right_back_leg_ = 0;
     }
 
-    pub_trustCmd_.publish(cmdBasicMovement);
+    
 	
-    }
-
-//here goes the code for the publisher
-//    void pub_function(const sensor_msgs::Joy::ConstPtr& msg) 
-    void pub_function() 
-    {
-	
-	ROS_INFO("in sub function");
-
     }
 
 	
@@ -182,28 +216,34 @@
  
     int main(int argc, char** argv) 
     { 
-      ros::init(argc, argv,"operator_cmds_node"); 
+      	ros::init(argc, argv,"operator_cmds_node"); 
 
- 	ROS_INFO("in main");
+ 		ROS_INFO("in main");
 
-      ros::NodeHandle n;
+		ros::NodeHandle n;
+
+      	double actualTime;
+      	double lastLoopTime;
      
-      //Publishers init
-	//ros::Publisher pub_str = n.advertise<std_msgs::String>("op_commands", 10);
-	//ros::Publisher pub_mot1 = n.advertise<std_msgs::String>("iArd_mot_1", 10);
-	//ros::Publisher pub_mot2 = n.advertise<std_msgs::String>("iArd_mot_2", 10);
-	ros::Publisher pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 10);
-	ros::Publisher pub_trustCmd = n.advertise<mybot_msg::msgMybot_basicMovement>("mybot/robot/cmdBasicMovement", 10);
+
+		OperatorCommands OpCommand(n);
 
 
-	//OperatorCommands OpCommand(pub_str, pub_twist, pub_mot1, pub_mot2, pub_trustCmd);
-	OperatorCommands OpCommand(pub_twist,pub_trustCmd);
+      	//ros::spin();
+      	
+      	while (ros::ok())
+      	{
+      	actualTime = rosTimeToDouble( ros::Time::now());
 
-      //Subscribers init
-	OpCommand.pub_function();
-	ros::Subscriber sub =  n.subscribe("/human_input/joy",10, &OperatorCommands::MiguelJoyCallback ,&OpCommand); 
-	ros::Subscriber subtrust =  n.subscribe("/human_input/joy",10, &OperatorCommands::TrustJoyCallback ,&OpCommand); 
+      	if((actualTime-lastLoopTime) >= 0.005 ){
+      	  OpCommand.fakeLegVelocity ( );
+      	  OpCommand.pub_function();
+      	  lastLoopTime = actualTime;
+      	}
+      	  
+      	  ros::spinOnce();
+      	  //usleep(100);
+      	  //sleep(1);
 
-      ros::spin(); 
- 
+      	}
     } 
