@@ -33,6 +33,8 @@ double rosTimeToDouble(ros::Time RosTime) //ToDo implement in a library
 		leg_left_back_up_vel_cmd_ = 0.0;
 		leg_left_back_down_vel_cmd_ = 0.0;
 
+		joystick_subscribed_ = false;
+
 
 		JoystickSubscriber_ =  n.subscribe("/joy",10, &OperatorCommands::TrustJoyCallback ,this);
 		BasicCmdPublisher_ = n.advertise<mybot_msg::msgMybot_basicMovement>("mybot/robot/cmdBasicMovement", 10);
@@ -58,7 +60,14 @@ double rosTimeToDouble(ros::Time RosTime) //ToDo implement in a library
     cmdBasicMovement_.right_front_leg = right_front_leg_; 	
     cmdBasicMovement_.right_back_leg = right_back_leg_;		
 
+    if(joystick_subscribed_ == true){
+    	
     BasicCmdPublisher_.publish(cmdBasicMovement_);
+    joystick_subscribed_ = false;
+	}
+
+    
+
     }
 
     void fakeLegVelocity ( ) 
@@ -81,6 +90,8 @@ private:
 	ros::Subscriber JoystickSubscriber_;
 
 	mybot_msg::msgMybot_basicMovement cmdBasicMovement_;
+
+	bool joystick_subscribed_;
 
 	bool mecanum_movement_mode_;
 
@@ -204,7 +215,7 @@ private:
 		right_back_leg_ = 0;
     }
 
-    
+    joystick_subscribed_ = true;
 	
     }
 
